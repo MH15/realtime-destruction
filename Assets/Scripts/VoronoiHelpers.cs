@@ -1,9 +1,29 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using VoronoiLib;
 
 public class VoronoiHelpers : MonoBehaviour {
     static System.Random rng = new System.Random();
+
+    public static List<Tuple<Vector2, Vector2>> GenerateDelaunay(List<VoronoiLib.Structures.FortuneSite> points) {
+        var processed = new HashSet<VoronoiLib.Structures.FortuneSite>();
+        var delaunay = new List<Tuple<Vector2, Vector2>>();
+        foreach (var site in points) {
+            foreach (var neighbor in site.Neighbors) {
+                if (!processed.Contains(neighbor)) {
+                    delaunay.Add(
+                        new Tuple<Vector2, Vector2>(
+                            new Vector2((float)site.X, (float)site.Y),
+                            new Vector2((float)neighbor.X, (float)neighbor.Y)
+                        ));
+                }
+            }
+            processed.Add(site);
+        }
+        return delaunay;
+    }
 
     // Generate sites randomly across the area
     public static List<Vector2> GenerateSites(Vector2 dimensions, int count) {
