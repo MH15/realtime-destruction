@@ -15,7 +15,7 @@ public class MeshModifier : MonoBehaviour {
     // Start is called before the first frame update
     void Start() {
         rng = new System.Random();
-        mesh = GetComponent<MeshFilter>().mesh;
+        mesh = MeshTools.Get(gameObject);
 
         size = GetComponent<MeshRenderer>().bounds.size;
         canvasSize = new Vector2(size.x, size.y);
@@ -52,40 +52,58 @@ public class MeshModifier : MonoBehaviour {
         LinkedList<VoronoiLib.Structures.VEdge> cuttingEdges = VoronoiLib.FortunesAlgorithm.Run(points, 0, 0, 800, 800);
 
         // HERE !@!@$@!%$@!%
-        var a = points[0];
-        print(string.Format("x: {0}, y: {1}", a.X, a.Y));
 
         var delaunay = VoronoiHelpers.GenerateDelaunay(points);
 
         StartCoroutine(DrawVoronoiCoroutine(cuttingEdges));
-        StartCoroutine(DrawDelaunayCoroutine(delaunay));
+        // StartCoroutine(DrawDelaunayCoroutine(delaunay));
 
+        // Make a copy of the original mesh
+        var workingMesh = MeshTools.Clone(mesh);
+        // Disable the orginal mesh
+        // mesh.Clear();
+        // this.GetComponent<Renderer>().enabled = false;
+
+        int i = 0;
         // Sutherland–Hodgman algorithm for slicing concave shapes
         foreach (var point in points) {
-            // Duplicate the base mesh
-            var piece = duplicateMesh(original);
+            // Duplicate the working mesh
+            var piece = MeshTools.Clone(workingMesh);
+            print("Cutting piece " + i + ", " + point.Neighbors.Count + " neighbors.");
 
             foreach (var neighbor in point.Neighbors) {
                 // Find the perpendicular bisector and slice
-                var bisector = findBisector(point, neighbor);
-                // Extend the bisector clipping line "infinitely"
-                var extendedBisector = extendLine(bisector);
+                var a = new Vector2((float)point.X, (float)point.Y);
+                var b = new Vector2((float)neighbor.X, (float)neighbor.Y);
+                var bisector = VoronoiHelpers.PerpendicularBisector(a, b);
 
                 // Keep vertices from this side of the bisector line
-                MeshHelper.cutMesh(piece, extendedBisector);
+                try {
+                    TempMesh temp = MeshTools.Cut(piece, bisector, center);
+                    MeshTools.ReplaceMesh(mesh, temp);
+                    print("SUCCESS");
+
+                } catch (UnityException e) {
+                    print(e.ToString());
+                }
                 // Fill the hole
-                MeshHelper.fillMesh(piece);
+                // MeshTools.FillHoles(piece);
+
+                // Now we have the final chunk, save it to a new GameObject
+                // var g = MeshTools.Export(temp, "Piece " + i);
+                // MeshTools.ReplaceMesh(mesh, temp);
+
+                // break;
             }
 
-            // Now we have the final chunk
-
+            // Instantiate(g, g.transform.position, Quaternion.identity);
+            i++;
+            break;
         }
 
+        mesh = workingMesh;
+
         print("length: " + points.Count);
-        // getEdges(points[5]);
-        // getEdges(points[10]);
-        // getEdges(points[20]);
-        getEdges(points[25]);
 
     }
 

@@ -7,6 +7,14 @@ using VoronoiLib;
 public class VoronoiHelpers : MonoBehaviour {
     static System.Random rng = new System.Random();
 
+    public static Line PerpendicularBisector(Vector2 a, Vector2 b) {
+        Line line = new Line();
+        line.origin = (a + b) / 2;
+        var slope = (b.y - a.y) / (b.x - a.x);
+        line.slope = -1 / slope;
+        return line;
+    }
+
     public static List<Tuple<Vector2, Vector2>> GenerateDelaunay(List<VoronoiLib.Structures.FortuneSite> points) {
         var processed = new HashSet<VoronoiLib.Structures.FortuneSite>();
         var delaunay = new List<Tuple<Vector2, Vector2>>();
